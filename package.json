@@ -1,0 +1,28 @@
+{
+  "name": "contour-fetcher",
+  "version": "1.0.0",
+  "description": "A module for use fetching and processing the FCC's FM contour data",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/index.js"
+  },
+  "keywords": [
+    "fcc",
+    "fm",
+    "contours",
+    "specialized"
+  ],
+  "author": "Joe Lepper",
+  "license": "MIT",
+  "dependencies": {
+    "adm-zip": "^0.4.7",
+    "csv-streamify": "^1.0.0",
+    "fstream": "^1.0.4",
+    "geojson": "^0.2.0",
+    "geojson-utils": "^1.1.0",
+    "level": "^0.18.0",
+    "memdown": "^1.0.0",
+    "request": "^2.54.0",
+    "unzip": "^0.1.11"
+  }
+}
