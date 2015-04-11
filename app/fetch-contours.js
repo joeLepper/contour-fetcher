@@ -1,11 +1,13 @@
 var request = require('request')
 var unzip = require('unzip')
 var csv = require('csv-streamify')
-var geo = require('geojson')
+var formatFetcher = require('./fetch-formats')
+var i = 0
 
 module.exports = function (db, cb) {
   console.log('fetching contours')
-  var actions = []
+  fetch = formatFetcher(db)
+  var stations = {}
   var parser = csv({ objectMode: true, delimiter: '|' })
 
   parser.on('data', function (rawContour) {
@@ -17,44 +19,30 @@ module.exports = function (db, cb) {
       return [+pointArr[0], +pointArr[1]]
     })
 
-    var contour = (
+    var callSign = callSignArr[0]
+    var station = (
       { applicationId: +rawContour[0]
       , stationType: rawContour[1]
-      , callSign: callSignArr[0]
+      , callSign: callSign
       , applicationFileNumber: callSignArr[1]
       , transmitter: transmitter
       , polygon: polygon
       }
     )
+    stations[callSign] = station
 
-    actions.push(
-      { type: 'put'
-      , key: 'lat~' + contour.transmitter[0]
-      , value: geo.parse([contour]
-      , { Polygon: 'polygon' }).features[0]
-      }
-    )
-
-    actions.push(
-      { type: 'put'
-      , key: 'lng~' + contour.transmitter[1]
-      , value: geo.parse([contour]
-      , { Polygon: 'polygon' }).features[0]
-      }
-    )
+    var newStations = Object.keys(stations).length
+    if (newStations === 50) {
+      fetch(stations)
+      stations = {}
+      i += newStations
+      // console.log(i + ' new stations parsed from zip')
+    }
   })
 
-  parser.on('end', function () {
-    console.log('finished')
-    db.batch(actions, function (err) {
-      console.log('batch contour write finished')
-      cb(err)
-    })
-  })
+  parser.on('end', function () { fetch(stations) })
 
   request.get('http://transition.fcc.gov/ftp/Bureaus/MB/Databases/fm_service_contour_data/FM_service_contour_current.zip')
     .pipe(unzip.Parse())
-    .on('entry', function (entry) {
-      entry.pipe(parser)
-    })
+    .on('entry', function (entry) { entry.pipe(parser) })
 }
